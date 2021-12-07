@@ -11,6 +11,7 @@ from freebox_api import Freepybox
 from freebox_api.api.wifi import Wifi
 from freebox_api.exceptions import HttpRequestError
 
+from homeassistant.components.freebox.cover import FreeboxCover
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
@@ -24,8 +25,12 @@ from homeassistant.util import slugify
 from .const import (
     API_VERSION,
     APP_DESC,
+    CONFIG_DISCOVER_HOME_ENTITIES,
+    CONFIG_DISCOVER_NETWORK_DEVICES,
     CONNECTION_SENSORS_KEYS,
     DOMAIN,
+    HOME_SUPPORTED_TILE_ACTIONS,
+    HOME_TILE_ACTION_STORE_SLIDER,
     STORAGE_KEY,
     STORAGE_VERSION,
 )
@@ -68,6 +73,7 @@ class FreeboxRouter:
         self.sensors_temperature: dict[str, int] = {}
         self.sensors_connection: dict[str, float] = {}
         self.call_list: list[dict[str, Any]] = []
+        self.home_devices: dict[str, FreeboxCover] = {}
 
         self._unsub_dispatcher = None
         self.listeners = []
@@ -96,8 +102,41 @@ class FreeboxRouter:
 
     async def update_all(self, now: datetime | None = None) -> None:
         """Update all Freebox platforms."""
-        await self.update_device_trackers()
+        if self._entry.options.get(CONFIG_DISCOVER_NETWORK_DEVICES, True):
+            await self.update_device_trackers()
+
         await self.update_sensors()
+
+        if self._entry.options.get(CONFIG_DISCOVER_HOME_ENTITIES, True):
+            await self.update_home()
+
+    async def update_home(self) -> None:
+        """Update Freebox home devices."""
+
+        fbx_home_adapters: [dict[str, Any]] = await self._api.home.get_home_adapters()
+
+        # self._api.home.set_home_endpoint_value()
+        for fbx_home_adapter in fbx_home_adapters:
+            tilesets: [dict[str, Any]] = await self._api.home.get_home_tilesets()
+            for tile in tilesets:
+                node_id = tile["node_id"]
+                if self.home_devices.get(node_id) is None:
+                    if tile["action"] in HOME_SUPPORTED_TILE_ACTIONS:
+                        if tile["action"] == HOME_TILE_ACTION_STORE_SLIDER:
+                            cover = FreeboxCover(self._api, tile["label"])
+                            cover.label = tile["label"]
+                            cover.node_id = node_id
+                            self.home_devices[node_id] = cover
+                            for data in tile["data"]:
+                                if data["name"] == "position":
+                                    cover.endpoint_id_position = data["ep_id"]
+                                    cover.position = data["value"]
+                                if data["name"] == "stop":
+                                    cover.endpoint_id_stop = data["ep_id"]
+
+                            async_dispatcher_send(
+                                self.hass, self.signal_home_device_new
+                            )
 
     async def update_device_trackers(self) -> None:
         """Update Freebox devices."""
@@ -191,6 +230,11 @@ class FreeboxRouter:
             name=self.name,
             sw_version=self._sw_v,
         )
+
+    @property
+    def signal_home_device_new(self) -> str:
+        """Event specific per Freebox entry to signal new device."""
+        return f"{DOMAIN}-{self._host}-home_device_new"
 
     @property
     def signal_device_new(self) -> str:

@@ -93,9 +93,8 @@ async def test_link(hass: HomeAssistant, router: Mock):
         )
 
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-        assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert result["result"].unique_id == MOCK_HOST
-        assert result["title"] == MOCK_HOST
+        assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+
         assert result["data"][CONF_HOST] == MOCK_HOST
         assert result["data"][CONF_PORT] == MOCK_PORT
 

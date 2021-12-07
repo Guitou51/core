@@ -17,7 +17,7 @@ APP_DESC = {
 }
 API_VERSION = "v6"
 
-PLATFORMS = ["device_tracker", "sensor", "switch"]
+PLATFORMS = ["device_tracker", "sensor", "switch", "cover"]
 
 DEFAULT_DEVICE_NAME = "Unknown device"
 
@@ -79,3 +79,15 @@ DEVICE_ICONS = {
     "vg_console": "mdi:gamepad-variant",
     "workstation": "mdi:desktop-tower-monitor",
 }
+
+
+# Confiuration
+CONFIG_DISCOVER_HOME_ENTITIES = "discover_home_entities"
+CONFIG_DISCOVER_NETWORK_DEVICES = "discover_network_devices"
+
+# Home
+
+HOME_TILE_ACTION_STORE_SLIDER = "store_slider"
+HOME_SUPPORTED_TILE_ACTIONS = [
+    HOME_TILE_ACTION_STORE_SLIDER
+]  # value list: tileset, graph, store, store_slider, color_picker, heat_picker, intensity_picker, none

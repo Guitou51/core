@@ -21,5 +21,15 @@
                 "title": "Freebox"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "discover_network_devices": "Decouvrir peripherique reseau",
+                    "discover_home_entities": "Decouvrir peripherique domotique"
+                }
+            }
+        }
     }
 }

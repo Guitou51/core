@@ -7,9 +7,14 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components import zeroconf
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN
+from .const import (
+    CONFIG_DISCOVER_HOME_ENTITIES,
+    CONFIG_DISCOVER_NETWORK_DEVICES,
+    DOMAIN,
+)
 from .router import get_api
 
 _LOGGER = logging.getLogger(__name__)
@@ -78,6 +83,7 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             await fbx.system.get_config()
             await fbx.lan.get_hosts_list()
             await self.hass.async_block_till_done()
+            await fbx.home.get_home_tilesets()
 
             # Close connection
             await fbx.close()
@@ -115,3 +121,42 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         host = zeroconf_properties["api_domain"]
         port = zeroconf_properties["https_port"]
         return await self.async_step_user({CONF_HOST: host, CONF_PORT: port})
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Open config popup."""
+        return FreeboxOptionsFlowHandler(config_entry)
+
+
+class FreeboxOptionsFlowHandler(config_entries.OptionsFlow):
+    """Configation Popup."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONFIG_DISCOVER_NETWORK_DEVICES,
+                        default=self.config_entry.options.get(
+                            CONFIG_DISCOVER_NETWORK_DEVICES, False
+                        ),
+                    ): bool,
+                    vol.Optional(
+                        CONFIG_DISCOVER_HOME_ENTITIES,
+                        default=self.config_entry.options.get(
+                            CONFIG_DISCOVER_HOME_ENTITIES, False
+                        ),
+                    ): bool,
+                }
+            ),
+        )
