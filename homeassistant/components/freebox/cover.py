@@ -135,14 +135,12 @@ class FreeboxCover(CoverEntity):
 
     def stop_cover(self, **kwargs):
         """Stop the cover."""
-        # TODO: find endpoint_id_position of stop command
         self.free_api.home.set_home_endpoint_value(
             self.node_id, self.endpoint_id_stop, {}
         )
 
     async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        # TODO: find endpoint_id_position of stop command
         await self.free_api.home.set_home_endpoint_value(
             self.node_id, self.endpoint_id_stop, {}
         )

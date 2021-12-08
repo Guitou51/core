@@ -6,6 +6,8 @@ import pytest
 from .const import (
     DATA_CALL_GET_CALLS_LOG,
     DATA_CONNECTION_GET_STATUS,
+    DATA_HOME_ADAPTERS,
+    DATA_HOME_TILESET,
     DATA_LAN_GET_HOSTS_LIST,
     DATA_STORAGE_GET_DISKS,
     DATA_SYSTEM_GET_CONFIG,
@@ -37,5 +39,10 @@ def mock_router():
         instance.wifi.get_global_config = AsyncMock(return_value=WIFI_GET_GLOBAL_CONFIG)
         # device_tracker
         instance.lan.get_hosts_list = AsyncMock(return_value=DATA_LAN_GET_HOSTS_LIST)
+
+        # home devices
+        instance.home.get_home_adapters = AsyncMock(return_value=DATA_HOME_ADAPTERS)
+        instance.home.get_home_tilesets = AsyncMock(return_value=DATA_HOME_TILESET)
+
         instance.close = AsyncMock()
         yield service_mock
